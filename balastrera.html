@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balastrera - Control de Volquetadas</title>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Simulación de window.storage usando localStorage
+        window.storage = {
+            get: async (key) => {
+                const value = localStorage.getItem(key);
+                return value ? { key, value, shared: false } : null;
+            },
+            set: async (key, value) => {
+                localStorage.setItem(key, value);
+                return { key, value, shared: false };
+            },
+            delete: async (key) => {
+                localStorage.removeItem(key);
+                return { key, deleted: true, shared: false };
+            },
+            list: async (prefix) => {
+                const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix || ''));
+                return { keys, prefix, shared: false };
+            }
+        };
+
+        function BalasterraApp() {
+            const [cantidad15, setCantidad15] = useState('');
+            const [cantidad10, setCantidad10] = useState('');
+            const [semanas, setSemanas] = useState([]);
+            const [semanaActual, setSemanaActual] = useState('');
+
+            useEffect(() => {
+                cargarDatos();
+            }, []);
+
+            const cargarDatos = async () => {
+                try {
+                    const keys = await window.storage.list('semana:');
+                    if (keys && keys.keys.length > 0) {
+                        const semanasData = [];
+                        for (const key of keys.keys) {
+                            const result = await window.storage.get(key);
+                            if (result) {
+                                semanasData.push(JSON.parse(result.value));
+                            }
+                        }
+                        setSemanas(semanasData.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)));
+                    }
+                } catch (error) {
+                    console.log('No hay datos previos');
+                }
+            };
+
+            const calcularTotales = () => {
+                const tipo15 = parseInt(cantidad15) || 0;
+                const tipo10 = parseInt(cantidad10) || 0;
+                
+                const totalVendido = tipo15 * 40000;
+                const comision15 = tipo15 * 6000;
+                const comision10 = tipo10 * 4000;
+                const totalComision = comision15 + comision10;
+                const gananciaPropia = totalVendido - comision15;
+
+                return { tipo15, tipo10, totalVendido, comision15, comision10, totalComision, gananciaPropia };
+            };
+
+            const guardarSemana = async () => {
+                if (!semanaActual.trim()) {
+                    alert('Por favor ingresa el nombre de la semana');
+                    return;
+                }
+
+                const tipo15 = parseInt(cantidad15) || 0;
+                const tipo10 = parseInt(cantidad10) || 0;
+
+                if (tipo15 === 0 && tipo10 === 0) {
+                    alert('Ingresa al menos una volquetada');
+                    return;
+                }
+
+                const totales = calcularTotales();
+                const nuevaSemana = {
+                    nombre: semanaActual,
+                    fecha: new Date().toISOString(),
+                    ...totales
+                };
+
+                try {
+                    await window.storage.set(`semana:${Date.now()}`, JSON.stringify(nuevaSemana));
+                    await cargarDatos();
+                    setCantidad15('');
+                    setCantidad10('');
+                    setSemanaActual('');
+                    alert('Semana guardada exitosamente');
+                } catch (error) {
+                    alert('Error al guardar. Intenta de nuevo.');
+                }
+            };
+
+            const eliminarSemana = async (fecha) => {
+                if (confirm('¿Estás seguro de eliminar esta semana?')) {
+                    try {
+                        const keys = await window.storage.list('semana:');
+                        for (const key of keys.keys) {
+                            const result = await window.storage.get(key);
+                            if (result) {
+                                const semana = JSON.parse(result.value);
+                                if (semana.fecha === fecha) {
+                                    await window.storage.delete(key);
+                                    await cargarDatos();
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        alert('Error al eliminar');
+                    }
+                }
+            };
+
+            const totales = calcularTotales();
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-slate-800 rounded-lg shadow-xl p-6 mb-6 border border-slate-700">
+                            <h1 className="text-3xl font-bold text-amber-400 mb-2">🚛 Balastrera</h1>
+                            <p className="text-slate-300">Control de Volquetadas y Comisiones</p>
+                        </div>
+
+                        <div className="bg-slate-800 rounded-lg shadow-xl p-6 mb-6 border border-slate-700">
+                            <h2 className="text-xl font-bold text-amber-400 mb-4">Registrar Nueva Semana</h2>
+                            
+                            <input
+                                type="text"
+                                placeholder="Nombre de la semana (ej: Semana 1 - Nov)"
+                                value={semanaActual}
+                                onChange={(e) => setSemanaActual(e.target.value)}
+                                className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600 mb-4 focus:outline-none focus:border-amber-400"
+                            />
+
+                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label className="block text-emerald-400 font-semibold mb-2">Volquetadas 15%</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="0"
+                                        value={cantidad15}
+                                        onChange={(e) => setCantidad15(e.target.value)}
+                                        className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-emerald-400 text-lg"
+                                    />
+                                    <p className="text-xs text-slate-400 mt-1">Material pagado - $6,000 comisión c/u</p>
+                                </div>
+                                <div>
+                                    <label className="block text-blue-400 font-semibold mb-2">Volquetadas 10%</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="0"
+                                        value={cantidad10}
+                                        onChange={(e) => setCantidad10(e.target.value)}
+                                        className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-blue-400 text-lg"
+                                    />
+                                    <p className="text-xs text-slate-400 mt-1">Sin pago material - $4,000 comisión c/u</p>
+                                </div>
+                            </div>
+
+                            {(parseInt(cantidad15) > 0 || parseInt(cantidad10) > 0) && (
+                                <div className="bg-slate-700 rounded-lg p-4 mb-4 border border-slate-600">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <svg className="text-amber-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                                        </svg>
+                                        <h3 className="text-lg font-semibold text-slate-200">Resumen</h3>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <p className="text-slate-400">Volquetadas 15%:</p>
+                                            <p className="text-xl font-bold text-emerald-400">{totales.tipo15}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-400">Volquetadas 10%:</p>
+                                            <p className="text-xl font-bold text-blue-400">{totales.tipo10}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-400">Total Vendido:</p>
+                                            <p className="text-xl font-bold text-amber-400">${totales.totalVendido.toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-slate-400">Total Comisión:</p>
+                                            <p className="text-xl font-bold text-amber-400">${totales.totalComision.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-slate-600">
+                                        <p className="text-slate-400 text-sm mb-1">Tu Ganancia (Vendido - Comisión):</p>
+                                        <p className="text-3xl font-bold text-green-400">${totales.gananciaPropia.toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={guardarSemana}
+                                className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 p-4 rounded-lg font-bold transition"
+                            >
+                                Guardar Semana
+                            </button>
+                        </div>
+
+                        {semanas.length > 0 && (
+                            <div className="bg-slate-800 rounded-lg shadow-xl p-6 border border-slate-700">
+                                <h2 className="text-xl font-bold text-amber-400 mb-4">Historial de Semanas</h2>
+                                <div className="space-y-4">
+                                    {semanas.map((semana) => (
+                                        <div key={semana.fecha} className="bg-slate-700 rounded-lg p-4 border border-slate-600">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-200">{semana.nombre}</h3>
+                                                    <p className="text-sm text-slate-400">{new Date(semana.fecha).toLocaleDateString()}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => eliminarSemana(semana.fecha)}
+                                                    className="text-red-400 hover:text-red-300 transition"
+                                                >
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                                <div className="bg-slate-800 p-2 rounded">
+                                                    <p className="text-slate-400">Vol. 15%</p>
+                                                    <p className="text-lg font-bold text-emerald-400">{semana.tipo15}</p>
+                                                </div>
+                                                <div className="bg-slate-800 p-2 rounded">
+                                                    <p className="text-slate-400">Vol. 10%</p>
+                                                    <p className="text-lg font-bold text-blue-400">{semana.tipo10}</p>
+                                                </div>
+                                                <div className="bg-slate-800 p-2 rounded">
+                                                    <p className="text-slate-400">Vendido</p>
+                                                    <p className="text-lg font-bold text-amber-400">${(semana.totalVendido / 1000).toFixed(0)}k</p>
+                                                </div>
+                                                <div className="bg-slate-800 p-2 rounded">
+                                                    <p className="text-slate-400">Comisión</p>
+                                                    <p className="text-lg font-bold text-amber-400">${(semana.totalComision / 1000).toFixed(0)}k</p>
+                                                </div>
+                                            </div>
+                                            <div className="mt-3 bg-slate-800 p-3 rounded">
+                                                <p className="text-slate-400 text-xs mb-1">Tu Ganancia:</p>
+                                                <p className="text-2xl font-bold text-green-400">${semana.gananciaPropia.toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<BalasterraApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
