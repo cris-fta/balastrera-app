@@ -67,9 +67,9 @@
                 const tipo15 = parseInt(cantidad15) || 0;
                 const tipo10 = parseInt(cantidad10) || 0;
                 
-                const totalVendido = tipo15 * 40000;
-                const comision15 = tipo15 * 6000;
-                const comision10 = tipo10 * 4000;
+                const totalVendido = tipo15 * 50000;
+                const comision15 = tipo15 * 7500;
+                const comision10 = tipo10 * 5000;
                 const totalComision = comision15 + comision10;
                 const gananciaPropia = totalVendido - comision15;
 
@@ -162,7 +162,7 @@
                                         onChange={(e) => setCantidad15(e.target.value)}
                                         className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-emerald-400 text-lg"
                                     />
-                                    <p className="text-xs text-slate-400 mt-1">Material pagado - $6,000 comisión c/u</p>
+                                    <p className="text-xs text-slate-400 mt-1">Material pagado - $7,500 comisión c/u</p>
                                 </div>
                                 <div>
                                     <label className="block text-blue-400 font-semibold mb-2">Volquetadas 10%</label>
@@ -174,7 +174,7 @@
                                         onChange={(e) => setCantidad10(e.target.value)}
                                         className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-blue-400 text-lg"
                                     />
-                                    <p className="text-xs text-slate-400 mt-1">Sin pago material - $4,000 comisión c/u</p>
+                                    <p className="text-xs text-slate-400 mt-1">Sin pago material - $5,000 comisión c/u</p>
                                 </div>
                             </div>
 
@@ -278,3 +278,4 @@
     </script>
 </body>
 </html>
+
