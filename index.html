@@ -72,10 +72,12 @@
                 const totalVendido = tipo15 * 50000;
                 const comision15 = tipo15 * 7500;
                 const comision10 = tipo10 * 5000;
-                const totalComision = comision15 + comision10;
+                const comisionOtros = Math.round(otrosValor * 0.15);
+                const totalComision = comision15 + comision10 + comisionOtros;
                 const gananciaPropia = totalVendido - comision15;
+                const gananciaOtros = otrosValor - comisionOtros;
                 const totalGeneral = totalVendido + otrosValor;
-                const gananciaTotal = gananciaPropia + otrosValor;
+                const gananciaTotal = gananciaPropia + gananciaOtros;
 
                 return { 
                     tipo15, 
@@ -84,8 +86,10 @@
                     totalVendido, 
                     comision15, 
                     comision10, 
+                    comisionOtros,
                     totalComision, 
                     gananciaPropia,
+                    gananciaOtros,
                     totalGeneral,
                     gananciaTotal
                 };
@@ -341,5 +345,3 @@
     </script>
 </body>
 </html>
-
-
