@@ -38,6 +38,7 @@
         function BalasterraApp() {
             const [cantidad15, setCantidad15] = useState('');
             const [cantidad10, setCantidad10] = useState('');
+            const [otros, setOtros] = useState('');
             const [semanas, setSemanas] = useState([]);
             const [semanaActual, setSemanaActual] = useState('');
 
@@ -66,14 +67,28 @@
             const calcularTotales = () => {
                 const tipo15 = parseInt(cantidad15) || 0;
                 const tipo10 = parseInt(cantidad10) || 0;
+                const otrosValor = parseInt(otros) || 0;
                 
                 const totalVendido = tipo15 * 50000;
                 const comision15 = tipo15 * 7500;
                 const comision10 = tipo10 * 5000;
                 const totalComision = comision15 + comision10;
                 const gananciaPropia = totalVendido - comision15;
+                const totalGeneral = totalVendido + otrosValor;
+                const gananciaTotal = gananciaPropia + otrosValor;
 
-                return { tipo15, tipo10, totalVendido, comision15, comision10, totalComision, gananciaPropia };
+                return { 
+                    tipo15, 
+                    tipo10, 
+                    otrosValor,
+                    totalVendido, 
+                    comision15, 
+                    comision10, 
+                    totalComision, 
+                    gananciaPropia,
+                    totalGeneral,
+                    gananciaTotal
+                };
             };
 
             const guardarSemana = async () => {
@@ -84,9 +99,10 @@
 
                 const tipo15 = parseInt(cantidad15) || 0;
                 const tipo10 = parseInt(cantidad10) || 0;
+                const otrosValor = parseInt(otros) || 0;
 
-                if (tipo15 === 0 && tipo10 === 0) {
-                    alert('Ingresa al menos una volquetada');
+                if (tipo15 === 0 && tipo10 === 0 && otrosValor === 0) {
+                    alert('Ingresa al menos un valor');
                     return;
                 }
 
@@ -102,6 +118,7 @@
                     await cargarDatos();
                     setCantidad15('');
                     setCantidad10('');
+                    setOtros('');
                     setSemanaActual('');
                     alert('Semana guardada exitosamente');
                 } catch (error) {
@@ -151,7 +168,7 @@
                                 className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600 mb-4 focus:outline-none focus:border-amber-400"
                             />
 
-                            <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                                 <div>
                                     <label className="block text-emerald-400 font-semibold mb-2">Volquetadas 15%</label>
                                     <input
@@ -176,9 +193,21 @@
                                     />
                                     <p className="text-xs text-slate-400 mt-1">Sin pago material - $5,000 comisión c/u</p>
                                 </div>
+                                <div>
+                                    <label className="block text-purple-400 font-semibold mb-2">Otros (Piedra, etc.)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="0"
+                                        value={otros}
+                                        onChange={(e) => setOtros(e.target.value)}
+                                        className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-purple-400 text-lg"
+                                    />
+                                    <p className="text-xs text-slate-400 mt-1">Valor total de otras ventas</p>
+                                </div>
                             </div>
 
-                            {(parseInt(cantidad15) > 0 || parseInt(cantidad10) > 0) && (
+                            {(parseInt(cantidad15) > 0 || parseInt(cantidad10) > 0 || parseInt(otros) > 0) && (
                                 <div className="bg-slate-700 rounded-lg p-4 mb-4 border border-slate-600">
                                     <div className="flex items-center gap-2 mb-3">
                                         <svg className="text-amber-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -188,7 +217,7 @@
                                         </svg>
                                         <h3 className="text-lg font-semibold text-slate-200">Resumen</h3>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mb-4">
                                         <div>
                                             <p className="text-slate-400">Volquetadas 15%:</p>
                                             <p className="text-xl font-bold text-emerald-400">{totales.tipo15}</p>
@@ -198,17 +227,37 @@
                                             <p className="text-xl font-bold text-blue-400">{totales.tipo10}</p>
                                         </div>
                                         <div>
-                                            <p className="text-slate-400">Total Vendido:</p>
-                                            <p className="text-xl font-bold text-amber-400">${totales.totalVendido.toLocaleString()}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-slate-400">Total Comisión:</p>
-                                            <p className="text-xl font-bold text-amber-400">${totales.totalComision.toLocaleString()}</p>
+                                            <p className="text-slate-400">Otros:</p>
+                                            <p className="text-xl font-bold text-purple-400">${totales.otrosValor.toLocaleString()}</p>
                                         </div>
                                     </div>
-                                    <div className="mt-4 pt-4 border-t border-slate-600">
-                                        <p className="text-slate-400 text-sm mb-1">Tu Ganancia (Vendido - Comisión):</p>
-                                        <p className="text-3xl font-bold text-green-400">${totales.gananciaPropia.toLocaleString()}</p>
+                                    
+                                    <div className="border-t border-slate-600 pt-3 mb-3">
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <p className="text-slate-400">Vendido (Volquetas):</p>
+                                                <p className="text-lg font-bold text-amber-400">${totales.totalVendido.toLocaleString()}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-slate-400">Total Comisión:</p>
+                                                <p className="text-lg font-bold text-red-400">${totales.totalComision.toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-800 rounded p-3 mb-3">
+                                        <p className="text-slate-400 text-xs mb-1">Ganancia Volquetas:</p>
+                                        <p className="text-xl font-bold text-green-400">${totales.gananciaPropia.toLocaleString()}</p>
+                                    </div>
+
+                                    <div className="border-t border-slate-600 pt-3">
+                                        <p className="text-slate-300 text-sm mb-1">TOTAL GENERAL (Volquetas + Otros):</p>
+                                        <p className="text-2xl font-bold text-amber-400">${totales.totalGeneral.toLocaleString()}</p>
+                                    </div>
+
+                                    <div className="mt-3 pt-3 border-t border-slate-600 bg-green-900/20 rounded p-3">
+                                        <p className="text-slate-300 text-sm mb-1">TU GANANCIA TOTAL:</p>
+                                        <p className="text-3xl font-bold text-green-400">${totales.gananciaTotal.toLocaleString()}</p>
                                     </div>
                                 </div>
                             )}
@@ -242,7 +291,7 @@
                                                     </svg>
                                                 </button>
                                             </div>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm mb-3">
                                                 <div className="bg-slate-800 p-2 rounded">
                                                     <p className="text-slate-400">Vol. 15%</p>
                                                     <p className="text-lg font-bold text-emerald-400">{semana.tipo15}</p>
@@ -251,18 +300,32 @@
                                                     <p className="text-slate-400">Vol. 10%</p>
                                                     <p className="text-lg font-bold text-blue-400">{semana.tipo10}</p>
                                                 </div>
+                                                {semana.otrosValor > 0 && (
+                                                    <div className="bg-slate-800 p-2 rounded">
+                                                        <p className="text-slate-400">Otros</p>
+                                                        <p className="text-lg font-bold text-purple-400">${(semana.otrosValor / 1000).toFixed(0)}k</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3 text-sm mb-3">
                                                 <div className="bg-slate-800 p-2 rounded">
                                                     <p className="text-slate-400">Vendido</p>
                                                     <p className="text-lg font-bold text-amber-400">${(semana.totalVendido / 1000).toFixed(0)}k</p>
                                                 </div>
                                                 <div className="bg-slate-800 p-2 rounded">
                                                     <p className="text-slate-400">Comisión</p>
-                                                    <p className="text-lg font-bold text-amber-400">${(semana.totalComision / 1000).toFixed(0)}k</p>
+                                                    <p className="text-lg font-bold text-red-400">${(semana.totalComision / 1000).toFixed(0)}k</p>
                                                 </div>
                                             </div>
-                                            <div className="mt-3 bg-slate-800 p-3 rounded">
-                                                <p className="text-slate-400 text-xs mb-1">Tu Ganancia:</p>
-                                                <p className="text-2xl font-bold text-green-400">${semana.gananciaPropia.toLocaleString()}</p>
+                                            {semana.totalGeneral && (
+                                                <div className="bg-slate-800 p-3 rounded mb-2">
+                                                    <p className="text-slate-400 text-xs mb-1">Total General:</p>
+                                                    <p className="text-xl font-bold text-amber-400">${semana.totalGeneral.toLocaleString()}</p>
+                                                </div>
+                                            )}
+                                            <div className="bg-green-900/20 p-3 rounded">
+                                                <p className="text-slate-400 text-xs mb-1">Ganancia Total:</p>
+                                                <p className="text-2xl font-bold text-green-400">${(semana.gananciaTotal || semana.gananciaPropia).toLocaleString()}</p>
                                             </div>
                                         </div>
                                     ))}
@@ -278,4 +341,5 @@
     </script>
 </body>
 </html>
+
 
