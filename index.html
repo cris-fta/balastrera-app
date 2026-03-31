@@ -77,7 +77,9 @@
                 const comisionDonaciones = donacionesQty * 7500;
                 const comisionOtros = Math.round(otrosValor * 0.15);
                 const totalComision = comision15 + comision10 + comisionDonaciones + comisionOtros;
-                const gananciaPropia = totalVendido - comision15;
+
+                // ✅ CORRECCIÓN: se descuenta también comision10
+                const gananciaPropia = totalVendido - comision15 - comision10;
                 const gananciaOtros = otrosValor - comisionOtros;
                 const totalGeneral = totalVendido + otrosValor;
                 const gananciaTotal = gananciaPropia + gananciaOtros - comisionDonaciones;
@@ -276,6 +278,12 @@
                                                 <p className="text-slate-400">Total Comisión:</p>
                                                 <p className="text-lg font-bold text-red-400">${totales.totalComision.toLocaleString()}</p>
                                             </div>
+                                            {totales.comision10 > 0 && (
+                                                <div>
+                                                    <p className="text-slate-400">Comisión 10% (trabajador):</p>
+                                                    <p className="text-lg font-bold text-blue-400">-${totales.comision10.toLocaleString()}</p>
+                                                </div>
+                                            )}
                                             {totales.comisionDonaciones > 0 && (
                                                 <div>
                                                     <p className="text-slate-400">Gasto Donaciones:</p>
@@ -400,4 +408,3 @@
     </script>
 </body>
 </html>
-
