@@ -38,6 +38,7 @@
         function BalasterraApp() {
             const [cantidad15, setCantidad15] = useState('');
             const [cantidad10, setCantidad10] = useState('');
+            const [cantidadDescuento, setCantidadDescuento] = useState('');
             const [donaciones, setDonaciones] = useState('');
             const [otros, setOtros] = useState('');
             const [semanas, setSemanas] = useState([]);
@@ -68,34 +69,47 @@
             const calcularTotales = () => {
                 const tipo15 = parseInt(cantidad15) || 0;
                 const tipo10 = parseInt(cantidad10) || 0;
+                const tipoDescuento = parseInt(cantidadDescuento) || 0;
                 const donacionesQty = parseInt(donaciones) || 0;
                 const otrosValor = parseInt(otros) || 0;
                 
-                const totalVendido = tipo15 * 50000;
+                // Viajes normales 15%: $50,000 c/u, comisión $7,500
+                const vendido15 = tipo15 * 50000;
                 const comision15 = tipo15 * 7500;
+
+                // Viajes con descuento: $45,000 c/u, comisión 15% = $6,750
+                const vendidoDescuento = tipoDescuento * 45000;
+                const comisionDescuento = tipoDescuento * 6750;
+
+                // Viajes 10%: sin venta propia, $5,000 al trabajador
                 const comision10 = tipo10 * 5000;
+
                 const comisionDonaciones = donacionesQty * 7500;
                 const comisionOtros = Math.round(otrosValor * 0.15);
-                const totalComision = comision15 + comision10 + comisionDonaciones + comisionOtros;
+                const totalComision = comision15 + comisionDescuento + comision10 + comisionDonaciones + comisionOtros;
 
-                // ✅ CORRECCIÓN: se descuenta también comision10
-                const gananciaPropia = totalVendido - comision15 - comision10;
+                const totalVendido = vendido15 + vendidoDescuento;
+                const gananciaVolquetas = vendido15 - comision15 - comision10 + vendidoDescuento - comisionDescuento;
                 const gananciaOtros = otrosValor - comisionOtros;
                 const totalGeneral = totalVendido + otrosValor;
-                const gananciaTotal = gananciaPropia + gananciaOtros - comisionDonaciones;
+                const gananciaTotal = gananciaVolquetas + gananciaOtros - comisionDonaciones;
 
                 return { 
                     tipo15, 
-                    tipo10, 
+                    tipo10,
+                    tipoDescuento,
                     donacionesQty,
                     otrosValor,
+                    vendido15,
+                    vendidoDescuento,
                     totalVendido, 
-                    comision15, 
+                    comision15,
+                    comisionDescuento,
                     comision10,
                     comisionDonaciones,
                     comisionOtros,
-                    totalComision, 
-                    gananciaPropia,
+                    totalComision,
+                    gananciaVolquetas,
                     gananciaOtros,
                     totalGeneral,
                     gananciaTotal
@@ -110,10 +124,11 @@
 
                 const tipo15 = parseInt(cantidad15) || 0;
                 const tipo10 = parseInt(cantidad10) || 0;
+                const tipoDescuento = parseInt(cantidadDescuento) || 0;
                 const donacionesQty = parseInt(donaciones) || 0;
                 const otrosValor = parseInt(otros) || 0;
 
-                if (tipo15 === 0 && tipo10 === 0 && donacionesQty === 0 && otrosValor === 0) {
+                if (tipo15 === 0 && tipo10 === 0 && tipoDescuento === 0 && donacionesQty === 0 && otrosValor === 0) {
                     alert('Ingresa al menos un valor');
                     return;
                 }
@@ -130,6 +145,7 @@
                     await cargarDatos();
                     setCantidad15('');
                     setCantidad10('');
+                    setCantidadDescuento('');
                     setDonaciones('');
                     setOtros('');
                     setSemanaActual('');
@@ -210,6 +226,21 @@
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div>
+                                    <label className="block text-yellow-400 font-semibold mb-2">🏷️ Viajes con Descuento</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="0"
+                                        value={cantidadDescuento}
+                                        onChange={(e) => setCantidadDescuento(e.target.value)}
+                                        className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-yellow-400 text-lg"
+                                    />
+                                    <p className="text-xs text-slate-400 mt-1">$45,000 c/u (desc. $5,000) - $6,750 comisión c/u</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div>
                                     <label className="block text-orange-400 font-semibold mb-2">🎁 Donaciones</label>
                                     <input
                                         type="number"
@@ -235,7 +266,7 @@
                                 </div>
                             </div>
 
-                            {(parseInt(cantidad15) > 0 || parseInt(cantidad10) > 0 || parseInt(donaciones) > 0 || parseInt(otros) > 0) && (
+                            {(parseInt(cantidad15) > 0 || parseInt(cantidad10) > 0 || parseInt(cantidadDescuento) > 0 || parseInt(donaciones) > 0 || parseInt(otros) > 0) && (
                                 <div className="bg-slate-700 rounded-lg p-4 mb-4 border border-slate-600">
                                     <div className="flex items-center gap-2 mb-3">
                                         <svg className="text-amber-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -254,6 +285,12 @@
                                             <p className="text-slate-400">Volquetadas 10%:</p>
                                             <p className="text-xl font-bold text-blue-400">{totales.tipo10}</p>
                                         </div>
+                                        {totales.tipoDescuento > 0 && (
+                                            <div>
+                                                <p className="text-slate-400">🏷️ Con Descuento:</p>
+                                                <p className="text-xl font-bold text-yellow-400">{totales.tipoDescuento}</p>
+                                            </div>
+                                        )}
                                         {totales.donacionesQty > 0 && (
                                             <div>
                                                 <p className="text-slate-400">Donaciones:</p>
@@ -271,10 +308,6 @@
                                     <div className="border-t border-slate-600 pt-3 mb-3">
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                                             <div>
-                                                <p className="text-slate-400">Vendido (Volquetas):</p>
-                                                <p className="text-lg font-bold text-amber-400">${totales.totalVendido.toLocaleString()}</p>
-                                            </div>
-                                            <div>
                                                 <p className="text-slate-400">Total Comisión:</p>
                                                 <p className="text-lg font-bold text-red-400">${totales.totalComision.toLocaleString()}</p>
                                             </div>
@@ -282,6 +315,12 @@
                                                 <div>
                                                     <p className="text-slate-400">Comisión 10% (trabajador):</p>
                                                     <p className="text-lg font-bold text-blue-400">-${totales.comision10.toLocaleString()}</p>
+                                                </div>
+                                            )}
+                                            {totales.comisionDescuento > 0 && (
+                                                <div>
+                                                    <p className="text-slate-400">Comisión Desc. (15% de $45k):</p>
+                                                    <p className="text-lg font-bold text-yellow-400">-${totales.comisionDescuento.toLocaleString()}</p>
                                                 </div>
                                             )}
                                             {totales.comisionDonaciones > 0 && (
@@ -301,7 +340,7 @@
 
                                     <div className="bg-slate-800 rounded p-3 mb-3">
                                         <p className="text-slate-400 text-xs mb-1">Ganancia Volquetas:</p>
-                                        <p className="text-xl font-bold text-green-400">${totales.gananciaPropia.toLocaleString()}</p>
+                                        <p className="text-xl font-bold text-green-400">${totales.gananciaVolquetas.toLocaleString()}</p>
                                     </div>
 
                                     {totales.otrosValor > 0 && (
@@ -361,6 +400,12 @@
                                                     <p className="text-slate-400">Vol. 10%</p>
                                                     <p className="text-lg font-bold text-blue-400">{semana.tipo10}</p>
                                                 </div>
+                                                {semana.tipoDescuento > 0 && (
+                                                    <div className="bg-slate-800 p-2 rounded">
+                                                        <p className="text-slate-400">🏷️ Con Desc.</p>
+                                                        <p className="text-lg font-bold text-yellow-400">{semana.tipoDescuento}</p>
+                                                    </div>
+                                                )}
                                                 {semana.donacionesQty > 0 && (
                                                     <div className="bg-slate-800 p-2 rounded">
                                                         <p className="text-slate-400">🎁 Donaciones</p>
@@ -374,11 +419,7 @@
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-                                                <div className="bg-slate-800 p-2 rounded">
-                                                    <p className="text-slate-400">Vendido</p>
-                                                    <p className="text-lg font-bold text-amber-400">${(semana.totalVendido / 1000).toFixed(0)}k</p>
-                                                </div>
+                                            <div className="grid grid-cols-1 gap-3 text-sm mb-3">
                                                 <div className="bg-slate-800 p-2 rounded">
                                                     <p className="text-slate-400">Comisión</p>
                                                     <p className="text-lg font-bold text-red-400">${(semana.totalComision / 1000).toFixed(0)}k</p>
@@ -392,7 +433,7 @@
                                             )}
                                             <div className="bg-green-900/20 p-3 rounded">
                                                 <p className="text-slate-400 text-xs mb-1">Ganancia Total:</p>
-                                                <p className="text-2xl font-bold text-green-400">${(semana.gananciaTotal || semana.gananciaPropia).toLocaleString()}</p>
+                                                <p className="text-2xl font-bold text-green-400">${(semana.gananciaTotal || semana.gananciaVolquetas || 0).toLocaleString()}</p>
                                             </div>
                                         </div>
                                     ))}
